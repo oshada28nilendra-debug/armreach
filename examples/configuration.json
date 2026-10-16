@@ -1,0 +1,1 @@
+{"schema_version":1,"simulation_only":true,"units":{"length":"metres","angle":"degrees"},"config":{"l1":1,"l2":1,"q1":[-180,180],"q2":[-180,180]},"pose":{"q1":0,"q2":90},"target":{"x":1,"y":1},"inverse":{"status":"reachable","singular":false,"solutions":[{"q1":0,"q2":90},{"q1":90,"q2":-90}]}}
