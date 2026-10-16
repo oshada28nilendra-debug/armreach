@@ -1,0 +1,12 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),{fk,ik,validate}=require('../kinematics');
+const c={l1:1,l2:1,q1:[-180,180],q2:[-180,180]},near=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} != ${b}`);
+test('known forward geometry',()=>{let p=fk(c,0,90);near(p.x,1);near(p.y,1);near(p.elbow.x,1)});
+test('two inverse solutions',()=>{const r=ik(c,1,1);assert.equal(r.solutions.length,2);for(const s of r.solutions){const p=fk(c,s.q1,s.q2);near(p.x,1);near(p.y,1)}});
+test('outer and inner unreachable',()=>{assert.equal(ik(c,3,0).solutions.length,0);assert.equal(ik({...c,l2:.5},.1,0).solutions.length,0)});
+test('fully extended singular deduplicated',()=>{const r=ik(c,2,0);assert.equal(r.solutions.length,1);assert.ok(r.singular)});
+test('origin infinite family and excluded fold',()=>{assert.equal(ik(c,0,0).status,'infinite family');assert.equal(ik({...c,q2:[-90,90]},0,0).solutions.length,0)});
+test('limits filter solutions',()=>{assert.equal(ik({...c,q2:[0,180]},1,1).solutions.length,1);assert.equal(ik({...c,q1:[-90,-10],q2:[0,90]},1,1).solutions.length,0)});
+test('180 degree boundary equivalent',()=>{const r=ik({...c,q1:[180,180]},-2,0);assert.equal(r.solutions.length,1);near(r.solutions[0].q1,180)});
+test('invalid values rejected',()=>{for(const l1 of [0,-1,NaN,Infinity,'1',11])assert.throws(()=>validate({...c,l1}));assert.throws(()=>validate({...c,q1:[20,-20]}));assert.throws(()=>ik(c,NaN,1));assert.throws(()=>fk(c,Infinity,0))});
+test('unequal-link folded boundary',()=>{const cc={...c,l1:2};for(const s of ik(cc,1,0).solutions){const p=fk(cc,s.q1,s.q2);near(p.x,1);near(p.y,0)}});
+test('grid roundtrip preserves geometry and limits',()=>{let max=0,n=0;const cc={...c,l2:.8};for(let a=-170;a<=170;a+=10)for(let b=-170;b<=170;b+=10){const p=fk(cc,a,b),r=ik(cc,p.x,p.y);assert.ok(r.solutions.length);for(const s of r.solutions){const q=fk(cc,s.q1,s.q2),e=Math.hypot(p.x-q.x,p.y-q.y);max=Math.max(max,e);assert.ok(e<1e-8);assert.ok(s.q1>=-180&&s.q1<=180&&s.q2>=-180&&s.q2<=180)}n++}console.log(JSON.stringify({synthetic_poses:n,max_position_error_m:max}))});
